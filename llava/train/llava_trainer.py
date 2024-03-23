@@ -16,6 +16,7 @@ from typing import List, Optional
 from transformers.modeling_utils import  unwrap_model
 from transformers.models.auto.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING_NAMES
 from collections import defaultdict
+import torch.nn as nn
 
 
 def maybe_zero_3(param, ignore_status=False, name=None):

@@ -16,7 +16,30 @@ pip install -e .
 
 ```
 ## Training data
-We will release the data soon, stay tuned!
+Download ShareGPT4V from [here](https://huggingface.co/datasets/Lin-Chen/ShareGPT4V)
+
+Download COCO from [here](https://cocodataset.org/#home)
+
+Download dataset annotation from [here](https://huggingface.co/datasets/renjiepi/BPO)
+
+Extract  data from ShareGPT4V and organize the images as follows:
+
+```
+Image_root
+├── coco/
+        train2017/
+├── llava/
+          llava_pretrain /
+├── sam/
+├── share_textvqa/
+                images/
+├── web-celebrity/
+                  images/
+├── web-landmark/
+                 images/
+├── wikiart/
+            images/
+```
 
 ## Train BPO
 

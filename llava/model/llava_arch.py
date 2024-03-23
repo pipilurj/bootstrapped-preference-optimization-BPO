@@ -283,15 +283,6 @@ class LlavaMetaForCausalLM(ABC):
                     p.requires_grad = False
 
 
-class LlavaMetaForCausalLMAdapt(LlavaMetaForCausalLM):
-
-
-    def encode_images(self, images):
-        image_features = super(LlavaMetaForCausalLMAdapt, self).encode_images(images)
-        # image_features = self.get_model().mm_projector_adaptor(image_features)
-        return image_features
-
-
 
 class MLP(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, num_layers):
@@ -308,25 +299,3 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.model(x)
 
-class LlavaMetaModelAdapt(LlavaMetaModel):
-
-    def load_mm_projector_adaptor(self):
-        pass
-        # config_new = copy.deepcopy(self.config)
-        # config_new.use_mm_proj = True
-        # config_new.mm_projector_type = "mlp2x_gelu"
-        # config_new.mm_hidden_size = 1024
-        # config_new.mm_vision_select_layer = -2
-        # config_new.mm_vision_select_feature = "patch"
-        # config_new.hidden_size = 4096
-        # mm_projector = build_vision_projector(config_new).cuda()
-        # mm_projector_weights = torch.load("/home/pirenjie/pretrained_weights/llava1.5_7b/mm_projector.bin", map_location='cpu')
-        # def get_w(weights, keyword):
-        #     return {k.split(keyword + '.')[1]: v for k, v in weights.items() if keyword in k}
-        # mm_projector.load_state_dict(get_w(mm_projector_weights, 'mm_projector'))
-        # self.mm_projector = mm_projector.to(next(self.mm_projector.parameters()).dtype)
-        # adaptor_statedict = torch.load("checkpoints/vocab/llava7b_to_13b_mlp_3layers.pt")
-        # print(f"loaded mm_projector_adaptor")
-        # self.mm_projector_adaptor = MLP(4096, 4096, 5120, 3).cuda()
-        # self.mm_projector_adaptor.load_state_dict(adaptor_statedict)
-        # self.mm_projector_adaptor = self.mm_projector_adaptor.to(next(self.mm_projector.parameters()).dtype)
