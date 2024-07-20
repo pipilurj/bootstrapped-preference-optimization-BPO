@@ -1,16 +1,16 @@
 import argparse
 import torch
 import os
-from llava_phi.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
-from llava_phi.conversation import conv_templates, SeparatorStyle
-from llava_phi.model.builder import load_pretrained_model
-from llava_phi.utils import disable_torch_init
-from llava_phi.mm_utils import tokenizer_image_token, get_model_name_from_path        
+from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+from llava.conversation import conv_templates, SeparatorStyle
+from llava.model.builder import load_pretrained_model
+from llava.utils import disable_torch_init
+from llava.mm_utils import tokenizer_image_token, get_model_name_from_path
 from glob import glob
 import json
-from vcd_utils.vcd_add_noise import add_diffusion_noise
+from image_weakening_utils.add_noise import add_diffusion_noise
 from PIL import Image
-from vcd_utils.vcd_sample import evolve_vcd_sampling
+from image_weakening_utils.sample import evolve_vcd_sampling
 import requests
 from PIL import Image
 from io import BytesIO
@@ -32,12 +32,12 @@ def eval_model(args):
     import json
     with open(args.query) as f:
         ds = json.load(f)
-    
+
     model_name = get_model_name_from_path(args.model_path)
     tokenizer, model, image_processor, context_len = load_pretrained_model(args.model_path, args.model_base, model_name)
 
     for i in tqdm(range(len(ds))):
-        
+
         qs = ds[i]['prompt']
         if '<image>\n' in qs:
             qs = qs.replace('<image>\n','')
