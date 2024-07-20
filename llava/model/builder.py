@@ -23,7 +23,7 @@ from llava.model import *
 from llava.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 
 
-def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, load_4bit=False, device_map="auto", device="cuda", **kwargs):
+def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, load_4bit=False, device_map="auto", device="cuda", mode="llava", **kwargs):
     kwargs = {"device_map": device_map, **kwargs}
 
     if device != "cuda":
@@ -41,6 +41,8 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
         )
     else:
         kwargs['torch_dtype'] = torch.float16
+
+
 
     if 'llava' in model_name.lower():
         # Load LLaVA model
@@ -103,7 +105,10 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
                 model = LlavaMPTForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
             else:
                 tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-                model = LlavaLlamaBPOForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
+                if "bpo" in mode:
+                    model = LlavaLlamaBPOForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
+                else:
+                    model = LlavaLlamaForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
     else:
         # Load language model
         if model_base is not None:

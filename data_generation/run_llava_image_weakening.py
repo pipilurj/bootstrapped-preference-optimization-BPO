@@ -34,7 +34,7 @@ def eval_model(args):
         ds = json.load(f)
 
     model_name = get_model_name_from_path(args.model_path)
-    tokenizer, model, image_processor, context_len = load_pretrained_model(args.model_path, args.model_base, model_name)
+    tokenizer, model, image_processor, context_len = load_pretrained_model(args.model_path, args.model_base, model_name, mode="bpo")
     with open(args.save_path,'a') as f:
         for i in tqdm(range(len(ds))):
 
@@ -110,7 +110,7 @@ def eval_model(args):
             outputs = outputs.strip()
 
             ds[i]['completions'].append({'score':0, 'response': outputs,'type':'mllm-hal'})
-        
+
             json.dump(ds[image],f)
             f.write('\n')
             f.flush()
