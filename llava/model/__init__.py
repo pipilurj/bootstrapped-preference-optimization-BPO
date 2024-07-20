@@ -1,2 +1,2 @@
-from .language_model.llava_llama import LlavaLlamaForCausalLM, LlavaConfig, LlavaLlamaForSequenceClassification, LlavaLlamaForSequenceClassificationSep, LlavaLlamaForCausalLMAdapt
+from .language_model.llava_llama import LlavaLlamaForCausalLM, LlavaLlamaBPOForCausalLM, LlavaConfig, LlavaLlamaForSequenceClassification, LlavaLlamaForSequenceClassificationSep #, LlavaLlamaForCausalLMAdapt
 # from .language_model.llava_mpt import LlavaMPTForCausalLM, LlavaMPTConfig
