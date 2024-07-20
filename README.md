@@ -27,18 +27,18 @@ Extract  data from ShareGPT4V and organize the images as follows:
 ```
 Image_root
 ├── coco/
-        train2017/
+    ├──train2017/
 ├── llava/
-          llava_pretrain /
+    ├──llava_pretrain/
 ├── sam/
 ├── share_textvqa/
-                images/
+    ├──images/
 ├── web-celebrity/
-                  images/
+    ├──images/
 ├── web-landmark/
-                 images/
+    ├──images/
 ├── wikiart/
-            images/
+    ├──images/
 ```
 
 ## Train BPO
@@ -49,7 +49,7 @@ bash scripts/finetune_bpo.sh
 
 
 ## Acknowledgement
-The project is built on top of the amazing multimodal large language model [LLaVA](https://github.com/haotian-liu/LLaVA), RLHF package [trl](https://github.com/huggingface/trl), and DPO for multimodal learning [Silkie](https://github.com/vlf-silkie/VLFeedback).
+The project is built on top of the amazing multimodal large language model [LLaVA](https://github.com/haotian-liu/LLaVA), RLHF package [trl](https://github.com/huggingface/trl), DPO for multimodal learning [Silkie](https://github.com/vlf-silkie/VLFeedback), and visual contrastive decoding [VCD](https://github.com/DAMO-NLP-SG/VCD).
 Thanks for these great work!
 
 
