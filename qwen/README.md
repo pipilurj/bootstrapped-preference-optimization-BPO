@@ -1,4 +1,4 @@
-# BPO for Silkie
+# BPO for Qwen
 
 Modified code from [[VLFeedback]](https://github.com/vlf-silkie/VLFeedback). Perform BPO on Qwen-VL-Chat using BPO data.
 
