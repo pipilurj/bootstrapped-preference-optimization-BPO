@@ -20,7 +20,7 @@ Download ShareGPT4V from [here](https://huggingface.co/datasets/Lin-Chen/ShareGP
 
 Download COCO from [here](https://cocodataset.org/#home)
 
-Download dataset annotation from [here](https://huggingface.co/datasets/renjiepi/BPO)
+Download dataset annotation from [here](https://huggingface.co/datasets/renjiepi/BPO_Instruct)
 
 Extract  data from ShareGPT4V and organize the images as follows:
 
