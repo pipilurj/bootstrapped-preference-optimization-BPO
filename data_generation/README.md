@@ -33,7 +33,7 @@ python run_llava_image_weakening.py --model-path liuhaotian/llava-v1.5-13b --ima
     .......
 ]
 ```
-
+Note: Image weakening currently runs on generic inference pipeline. We will consider integrating it with MLLM acceleration framework, e.g,. https://github.com/InternLM/lmdeploy.
 
 ## Error injection
 ```bash
