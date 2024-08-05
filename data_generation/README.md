@@ -38,6 +38,6 @@ python run_llava_image_weakening.py --model-path liuhaotian/llava-v1.5-13b --ima
 ## Error injection
 ```bash
 cd data_generation
-python error_injection.py
+python error_injection.py --model_name_or_path PATH-TO-LLM --dataset_path PATH-TO-SFT-DATA --output_result_path PATH-TO-PREFERENCE-DATA
 ```
 
