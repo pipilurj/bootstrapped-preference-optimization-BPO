@@ -5,6 +5,7 @@
 
 ## Install environments
 Following the [steps](https://github.com/zhuyiche/llava-phi?tab=readme-ov-file#install) to install the environments.
+For error injection, please install VLLM to speed up inference.
 
 
 ## Image weakening
