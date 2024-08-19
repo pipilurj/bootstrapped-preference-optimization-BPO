@@ -14,6 +14,7 @@ conda activate bpo
 
 pip install -e .
 
+
 ```
 ## Training data
 Download ShareGPT4V from [here](https://huggingface.co/datasets/Lin-Chen/ShareGPT4V)

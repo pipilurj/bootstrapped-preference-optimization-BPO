@@ -4,14 +4,13 @@ deepspeed llava/train/bpo_llava.py \
     --learning_rate 2e-6 \
     --deepspeed ./scripts/zero2.json \
     --lora_enable True \
-    --lora_r 32 \
+    --lora_r 64 \
     --lora_alpha 256 \
     --model_name_or_path path-to-model \
     --version v1 \
     --data_path path-to-json-annotation-file \
     --image_folder path-to-image-folder \
     --vision_tower openai/clip-vit-large-patch14 \
-    --pretrain_mm_mlp_adapter path-to-projector \
     --mm_vision_select_layer -2 \
     --mm_use_im_start_end False \
     --mm_use_im_patch_token False \
@@ -35,5 +34,6 @@ deepspeed llava/train/bpo_llava.py \
     --dataloader_num_workers 4 \
     --lazy_preprocess True  \
     --lora_enable
+
 bash scripts/v1_5/eval/eval_multi_lora.sh path-to-model path-to-lora playground/data/eval/mm-vet.jsonl path-to-result path-to-images gpu-num temperature start_gpu
 python scripts/convert_mmvet_for_eval.py --src path-to-result-jsonl --dst path-to-result-json
