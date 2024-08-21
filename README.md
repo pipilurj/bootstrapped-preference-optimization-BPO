@@ -14,7 +14,13 @@ conda activate bpo
 
 pip install -e .
 
+```
+Install flash attention for efficient training
 
+```
+pip install -e ".[train]"
+
+pip install flash-attn --no-build-isolation
 ```
 ## Training data
 Download ShareGPT4V from [here](https://huggingface.co/datasets/Lin-Chen/ShareGPT4V)
@@ -42,13 +48,15 @@ Image_root
     ├──images/
 ```
 
-## Train BPO
-
+## Training
+### Training BPO
 ```
 bash scripts/finetune_bpo.sh
 ```
-
-
+### Training BPO with flash attention
+```
+bash scripts/finetune_bpo_flash.sh
+```
 ## Acknowledgement
 The project is built on top of the amazing multimodal large language model [LLaVA](https://github.com/haotian-liu/LLaVA), RLHF package [trl](https://github.com/huggingface/trl), DPO for multimodal learning [Silkie](https://github.com/vlf-silkie/VLFeedback), and visual contrastive decoding [VCD](https://github.com/DAMO-NLP-SG/VCD).
 Thanks for these great work!
