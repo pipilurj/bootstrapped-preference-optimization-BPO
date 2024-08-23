@@ -1,23 +1,29 @@
 import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 import torch.distributed
 from collections import defaultdict
+from dataclasses import dataclass, field
 from itertools import combinations
+from typing import Dict, List, Optional
+import copy
 import datasets
+import numpy as np
 import torch.distributed
 from trl.trainer import DPOTrainer
 from trl.trainer.utils import DPODataCollatorWithPadding
+from torch.utils.data import DataLoader
 import copy
 from dataclasses import dataclass, field
 import json
 import logging
 import pathlib
-from typing import Dict, Optional, Sequence
-
+from typing import Dict, Optional, Sequence, List
+import time
 import torch
 
 import transformers
 
-from llava.constants import IGNORE_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+from llava.constants import IGNORE_INDEX, IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 from llava import conversation as conversation_lib
 from llava.model import *
 from llava.mm_utils import tokenizer_image_token
@@ -428,12 +434,22 @@ def preprocess_v1(
 
     # Tokenize conversations
 
+    # if has_image:
     input_ids = tokenizer_image_token(conv.get_prompt(), tokenizer, return_tensors='pt')
+    # else:
+    #     input_ids = tokenizer(
+    #         conversations,
+    #         return_tensors="pt",
+    #         padding="longest",
+    #         max_length=tokenizer.model_max_length,
+    #         truncation=True,
+    #     ).input_ids
 
     targets = [input_ids.clone()]
     instructions = []
     conversations = [conv.get_prompt()]
     assert conv.sep_style == conversation_lib.SeparatorStyle.TWO
+
     # Mask targets
     sep = conv.sep + conv.roles[1] + ": "
     for conversation, target in zip(conversations, targets):
@@ -567,6 +583,14 @@ def read_jsonl(file_path):
         return [json.loads(line) for line in file]
 
 
+def qwen_vl_prompt_format(prompt, img_paths):
+    out = []
+    for i, img_path in enumerate(img_paths):
+        out.append(f"Picture {i + 1}: <img>{img_path}</img>")
+    out.append(prompt.strip())
+    return "".join(out)
+
+
 def make_conv(prompt, answer):
     return [
         {
@@ -665,35 +689,58 @@ class LLaVADPODataCollator(DPODataCollatorWithPadding):
         padded_batch.update({"images": images})
         return padded_batch
 
-def prompt_format(prompt, img_path):
+def qwen_vl_prompt_format(prompt, img_path):
     out = []
     out.append(f"<img>{img_path}</img>")
     out.append(prompt.strip())
     return "".join(out)
 
 
-def bpo_paired_dataset(ds, local_rank, data_args):
+def make_vlfeedback_paired_dataset(ds, local_rank, data_args):
+    # ds = datasets.load_dataset("MMInstruction/VLFeedback", split="train")
+    # ds = datasets.load_dataset("/home/pirenjie/.cache/huggingface/datasets/vl_instruct/default-7a9efedee87e9964/0.0.0/7b7ce5247a942be131d49ad4f3de5866083399a0f250901bd8dc202f8c5f7ce5", split="train")
     def set_format(sample):
         prompt = sample["prompt"]
         img_path = sample["image"]
-        sample["prompt"] = prompt_format(prompt, img_path)
+        sample["prompt"] = qwen_vl_prompt_format(prompt, img_path)
         return sample
 
-    if local_rank > 0 and torch.distributed.is_initialized():
-        torch.distributed.barrier()
-
-    ds = ds.map(set_format)
-    # format prompt
+    # # format prompt
     # if local_rank > 0 and torch.distributed.is_initialized():
+    #     print("Waiting for main process to perform the mapping1")
     #     torch.distributed.barrier()
+    #
+    # ds = ds.map(set_format)
+    #
+    # if local_rank == 0 and torch.distributed.is_initialized():
+    #     print("Loading results from main process1")
+    #     torch.distributed.barrier()
+    # format prompt
+    print(f"rank {local_rank}, torch.distributed.is_initialized() {torch.distributed.is_initialized()}")
+    if torch.distributed.is_initialized():
+        if local_rank > 0:
+            print("Waiting for main process to perform the mapping")
+            torch.distributed.barrier()
 
-    print(f"original length {len(ds)}")
+        if local_rank == 0:
+            ds = ds.map(set_format)
+            print("Loading results from main process")
+            torch.distributed.barrier()
+
+        # Ensure all processes wait until the main process is done
+
+    if local_rank > 0 and torch.distributed.is_initialized():
+        print("Waiting for main process to perform the mapping2")
+        torch.distributed.barrier()
+    print(f"rank {local_rank} original length {len(ds)}")
     ds = ds.filter(lambda example: all(len(comp["response"].split()) <= data_args.filter_size for comp in example["completions"]))
-    print(f"filtered length {len(ds)}")
-
+    print(f"rank {local_rank} filtered length {len(ds)}")
+    time.sleep(20)
     if local_rank == 0 and torch.distributed.is_initialized():
+        print("Loading results from main process2")
         torch.distributed.barrier()
 
+    # make comparison pairs from completion list
 
     def make_batch_pairs(sample):
         converted_sample = defaultdict(list)
@@ -716,18 +763,20 @@ def bpo_paired_dataset(ds, local_rank, data_args):
 
         return converted_sample
 
-    print(f"start making pairs")
-    # make comparison pairs from completion list
+    # if data_args.dataset_size > 0:
+    #     ds = ds.select(range(data_args.dataset_size)) # for debug purpose
     if local_rank > 0 and torch.distributed.is_initialized():
+        print("Waiting for main process to perform the mapping3")
         torch.distributed.barrier()
-
+    print("start mapping")
     ds = ds.map(
         make_batch_pairs,
         batched=True,
         remove_columns=set(ds.column_names) - set(["prompt", "chosen", "rejected"]),
     )
-
+    print("done mapping")
     if local_rank == 0 and torch.distributed.is_initialized():
+        print("Loading results from main process3")
         torch.distributed.barrier()
 
     return ds
@@ -944,20 +993,33 @@ def train():
             sampled_indices.extend(indices[:int(sample_percentage * len(indices))])
         sampled_data = dataset.select(sorted(sampled_indices))
         return sampled_data
+    # if local_rank > 0:
+    #     torch.distributed.barrier()
     if data_args.subset_percent > 0:
+        # random.seed(42)
         dataset = sample_data(dataset, data_args.subset_percent)
+    # dataset_split = dataset.train_test_split(test_size=data_args.test_size, seed=42)
     train_dataset = dataset
-    train_dataset = bpo_paired_dataset(train_dataset, local_rank, data_args)
+    # train_dataset = dataset_split["train"]
+    # eval_dataset = dataset_split["test"]
+    train_dataset = make_vlfeedback_paired_dataset(train_dataset, local_rank, data_args)
+    # eval_dataset = make_vlfeedback_paired_dataset(eval_dataset, local_rank, data_args)
     collator = LLaVADPODataCollator(data_args=data_args, tokenizer=tokenizer, max_length=1024)
     print(f"rank {local_rank} train length {len(train_dataset)}")
+    # print(f"rank {local_rank} eval length {len(eval_dataset)}")
+    # train_dataloader = DataLoader(train_dataset, batch_size=12, collate_fn=collator)
+    #
+    # # Start trainner
     trainer = CustomDPOTrainer(
         model,
         args=training_args,
         beta=training_args.beta,
         train_dataset=train_dataset,
+        # eval_dataset=eval_dataset,
         data_collator=collator,
         tokenizer=tokenizer,
         max_length=training_args.model_max_length,
+        # generate_during_eval=training_args.generate_during_eval,
     )
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
@@ -982,6 +1044,11 @@ def train():
     else:
         safe_save_model_for_hf_trainer(trainer=trainer,
                                        output_dir=training_args.output_dir)
+    # trainer.save_state()
+    #
+    # safe_save_model_for_hf_trainer(
+    #     trainer=trainer, output_dir=training_args.output_dir, bias=lora_args.lora_bias
+    # )
 
 
 if __name__ == "__main__":

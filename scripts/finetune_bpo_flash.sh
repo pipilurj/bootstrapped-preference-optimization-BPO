@@ -4,7 +4,7 @@ deepspeed llava/train/bpo_llava_flash.py \
     --learning_rate 2e-6 \
     --deepspeed ./scripts/zero2.json \
     --lora_enable True \
-    --lora_r 64 \
+    --lora_r 32 \
     --lora_alpha 256 \
     --model_name_or_path path-to-model \
     --version v1 \
